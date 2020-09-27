@@ -1,0 +1,20 @@
+#
+# .gitignore
+#
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.idea/
+*.iml
+
+# Project
+dist/
+data/
