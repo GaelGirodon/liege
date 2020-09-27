@@ -2,7 +2,8 @@ FROM golang AS build
 COPY . /app
 WORKDIR /app
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN bash ./scripts/build.sh && mkdir -p ./dist/data
+RUN mkdir -p ./dist/data && \
+  go build -ldflags="-s -w" -o ./dist/liege ./liege.go
 
 FROM scratch
 COPY --from=build /app/dist /
