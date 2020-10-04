@@ -16,5 +16,6 @@
 *.iml
 
 # Project
+bin/
 dist/
 data/

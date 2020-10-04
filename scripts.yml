@@ -1,0 +1,56 @@
+# scripts.yml
+
+shell: powershell
+variables:
+  APP_NAME: liege
+  MAIN_FILE: ./liege.go
+  BIN_PATH: ./bin
+  BIN_FILE: ./bin/liege
+  DIST_PATH: ./dist
+  GOARCH: amd64
+
+build:
+  script:
+    - if (!$env:GOOS) { Write-Error "Set `$env:GOOS to 'windows' or 'linux'"; exit 1 }
+    - $ext = ""; if ($env:GOOS -eq "windows") { $ext = ".exe" }
+    - go build -ldflags="-s -w" -o "$env:BIN_FILE$ext" $env:MAIN_FILE
+
+test:
+  script: go test ./...
+
+package:
+  script:
+    - $env:GOOS="windows"; fab build
+    - New-Package -Path "$env:BIN_FILE.exe" -Destination $env:DIST_PATH -Name "$($env:APP_NAME)_$($env:GOOS)_$($env:GOARCH)"
+    - $env:GOOS="linux"; fab build
+    - New-Package -Path $env:BIN_FILE -Destination $env:DIST_PATH -Name "$($env:APP_NAME)_$($env:GOOS)_$($env:GOARCH)"
+
+release:
+  params:
+    - VERSION
+  step_by_step: true
+  script:
+    - echo "Update the changelog..."
+    - git add ./CHANGELOG.md
+    - git commit -m "Release $env:VERSION"
+    - git tag -a "$env:VERSION" -m "$env:VERSION"
+    - fab clean package
+
+docker:build:
+  params:
+    - VERSION
+  script:
+    - docker build -t gaelgirodon/liege .
+    - docker tag gaelgirodon/liege gaelgirodon/liege:$env:VERSION
+
+docker:push:
+  params:
+    - VERSION
+  script:
+    - docker push gaelgirodon/liege:$env:VERSION
+    - docker push gaelgirodon/liege:latest
+
+clean:
+  script:
+    - if (Test-Path $env:BIN_PATH) { Remove-Item -Recurse $env:BIN_PATH }
+    - if (Test-Path $env:DIST_PATH) { Remove-Item -Recurse $env:DIST_PATH }
