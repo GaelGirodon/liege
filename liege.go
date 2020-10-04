@@ -12,6 +12,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	paths "path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -76,7 +77,7 @@ func main() {
 // Parse, validate and return command-line arguments.
 func parseArgs() (root string, port uint, verbose bool, err error, exitCode int) {
 	// Parse args
-	portFlag := flag.Uint("p", defaultPort, "port to listen on")
+	portFlag := flag.Uint("p", defaultPort, "`port` to listen on")
 	verboseFlag := flag.Bool("v", false, "run verbosely")
 	flag.Usage = func() {
 		println("Usage:\n  " + appName + " [flags] <root-dir>\n\nFlags:")
@@ -129,8 +130,8 @@ func registerRoutes(root string, server *echo.Group) error {
 		}
 		// Parse file name
 		name, ext, code := parseFileName(info.Name())
-		// Build URL
-		url := "/" + strings.Trim(filepath.ToSlash(filepath.Dir(relPath)), "/")
+		// Build base URL
+		baseUrl := strings.Trim(filepath.ToSlash(filepath.Dir(relPath)), "/.")
 		// Read file
 		content, contentType, err := readFile(path)
 		if err != nil {
@@ -141,17 +142,18 @@ func registerRoutes(root string, server *echo.Group) error {
 		log("debug", relPath+":")
 		handler := buildHandler(content, code, contentType)
 		// Path without extension
-		log("debug", "  %s => %d", url+"/"+name, code)
-		server.Any(url+"/"+name, handler)
+		url := "/" + paths.Join(baseUrl, name)
+		log("debug", "  %s => %d", url, code)
+		server.Any(url, handler)
 		// Full path
 		if len(ext) > 0 {
-			log("debug", "  %s => %d", url+"/"+name+ext, code)
-			server.Any(url+"/"+name+ext, handler)
+			log("debug", "  %s => %d", url+ext, code)
+			server.Any(url+ext, handler)
 		}
 		// Index file
 		if name == "index" {
-			log("debug", "  %s => %d", url, code)
-			server.Any(url, handler)
+			log("debug", "  %s => %d", "/"+baseUrl, code)
+			server.Any("/"+baseUrl, handler)
 		}
 		return nil
 	})
