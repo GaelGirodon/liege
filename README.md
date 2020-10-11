@@ -26,7 +26,6 @@ liege [flags] <root-dir>
 | ------------ | ---------------------------------- | -------------------- |
 | `<root-dir>` | Path to the server root directory  | `LIEGE_ROOT`         |
 | `-p <port>`  | Port to listen on (default `3000`) | `LIEGE_PORT`         |
-| `-v`         | Run verbosely                      | `LIEGE_VERBOSE`      |
 | `-h`         | Show the help message and exit     |
 
 ### Example
@@ -41,7 +40,7 @@ ______ /____/___/___/\___/___/
 HTTP server started on port 3000
 ```
 
-## Configuration
+### Configuration
 
 Given the following file tree:
 
@@ -82,6 +81,19 @@ The response can be customized using the following file name syntax:
 | `name` | File name, used in the URL path                  |
 | `code` | Custom HTTP response status code (default `200`) |
 | `ext`  | File extension, helps to determine content type  |
+
+On start-up, the server loads stub files in memory and build routes.
+To reload stub files from the root directory and update routes, call the
+`refresh` endpoint.
+
+### Management endpoints
+
+The server provides the following management endpoints:
+
+| Method | Path              | Response | Description             |
+| ------ | ----------------- | -------- | ----------------------- |
+| `POST` | `/_liege/refresh` | `204`    | Reload stub files       |
+| `GET`  | `/_liege/routes`  | `200`    | Get available routes    |
 
 ## License
 

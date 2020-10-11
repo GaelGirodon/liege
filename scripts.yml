@@ -3,7 +3,7 @@
 shell: powershell
 variables:
   APP_NAME: liege
-  MAIN_FILE: ./liege.go
+  MAIN_FILE: ./cmd/liege.go
   BIN_PATH: ./bin
   BIN_FILE: ./bin/liege
   DIST_PATH: ./dist
