@@ -95,10 +95,12 @@ To reload stub files from the root directory and update routes, call the
 
 The server provides the following management endpoints:
 
-| Method | Path              | Response | Description             |
-| ------ | ----------------- | -------- | ----------------------- |
-| `POST` | `/_liege/refresh` | `204`    | Reload stub files       |
-| `GET`  | `/_liege/routes`  | `200`    | Get available routes    |
+| Method | Path              | Response | Description          |
+| ------ | ----------------- | -------- | -------------------- |
+| `GET`  | `/_liege/config`  | `200`    | Get configuration    |
+| `PUT`  | `/_liege/config`  | `204`    | Update configuration |
+| `POST` | `/_liege/refresh` | `204`    | Reload stub files    |
+| `GET`  | `/_liege/routes`  | `200`    | Get available routes |
 
 ## License
 

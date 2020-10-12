@@ -3,6 +3,7 @@ package console
 import (
 	"flag"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,28 @@ func Test_Parse(t *testing.T) {
 			}
 			if args.Port != test.want.Port {
 				t.Errorf("want port = %v, got %v", test.want.Port, args.Port)
+			}
+		})
+	}
+}
+
+func Test_ValidateRootDirPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		root    string
+		wantErr string
+	}{
+		{name: "ok", root: "../../internal", wantErr: ""},
+		{name: "err/empty", root: "", wantErr: "required"},
+		{name: "err/not-found", root: "unknown", wantErr: "exist"},
+		{name: "err/not-dir", root: "console.go", wantErr: "directory"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateRootDirPath(test.root)
+			if (len(test.wantErr) != 0) != (err != nil) ||
+				err != nil && !strings.Contains(err.Error(), test.wantErr) {
+				t.Errorf("want error '%v', got '%v'", test.wantErr, err)
 			}
 		})
 	}

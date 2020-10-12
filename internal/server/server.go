@@ -44,6 +44,8 @@ func (s *StubServer) Start() error {
 	}
 	s.routes = routes
 	// Register first-level routes
+	e.GET("/_liege/config", s.getConfigHandler)
+	e.PUT("/_liege/config", s.updateConfigHandler)
 	e.POST("/_liege/refresh", s.refreshHandler)
 	e.GET("/_liege/routes", s.routesHandler)
 	e.Any("/*", s.stubsHandler)
@@ -57,11 +59,29 @@ func (s *StubServer) Start() error {
 // Handlers
 //
 
+// Get the stub server configuration.
+func (s *StubServer) getConfigHandler(c echo.Context) error {
+	return c.JSON(http.StatusOK, console.Args{Root: s.Root})
+}
+
+// Update the stub server configuration.
+func (s *StubServer) updateConfigHandler(c echo.Context) error {
+	config := new(console.Args)
+	if err := c.Bind(config); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	} else if err := console.ValidateRootDirPath(config.Root); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	s.Root = config.Root
+	return c.NoContent(http.StatusNoContent)
+}
+
 // Reload stub files and re-build routes.
 func (s *StubServer) refreshHandler(c echo.Context) error {
 	routes, err := BuildRoutes(s.Root)
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest,
+			"unable to load stub files and build routes: "+err.Error())
 	}
 	s.routes = routes
 	return c.NoContent(http.StatusNoContent)
