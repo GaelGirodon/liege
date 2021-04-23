@@ -5,21 +5,22 @@ import (
 	"gaelgirodon.fr/liege/internal/server"
 )
 
+// main is the application entrypoint.
 func main() {
 	// Parse command-line arguments
-	args, err := console.ParseArgs()
+	cfg, err := console.ParseArgs()
 	if err != nil {
 		console.Logger.Fatalln("Error: " + err.Error())
 	}
 
-	// Start-up banner
+	// Print start-up banner
 	console.Logger.Println("_________ __   _________________\n" +
 		"________ / /  /  _/ __/ ___/ __/\n" +
 		"_______ / /___/ // _// (_ / _/\n" +
 		"______ /____/___/___/\\___/___/")
 
 	// Setup and start the HTTP server
-	s := &server.StubServer{Root: args.Root, Port: args.Port}
+	s := &server.StubServer{Config: *cfg}
 	if err = s.Start(); err != nil {
 		console.Logger.Fatalln("Error: " + err.Error())
 	}

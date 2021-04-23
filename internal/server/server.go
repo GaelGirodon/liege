@@ -5,30 +5,31 @@ import (
 	"encoding/base64"
 	"fmt"
 	"gaelgirodon.fr/liege/internal/console"
+	"gaelgirodon.fr/liege/internal/model"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const (
-	// Request body with higher size won't be send back in a header.
+	// Request body with size higher than maxRequestBodySize
+	// won't be sent back in a header.
 	maxRequestBodySize = 4096
-	// Request body header name in response.
+	// requestBodyHeader is the request body header name in the response.
 	requestBodyHeader = "X-Request-Body"
 )
 
-// An HTTP server for stub files.
+// StubServer is an HTTP server for stub files.
 type StubServer struct {
-	// Root server directory.
-	Root string
-	// Server port number.
-	Port uint16
-	// Stub routes.
-	routes []*Route
+	// Config is the application configuration.
+	Config model.Config
+	// routes it the stub routes list.
+	routes []*model.Route
 }
 
-// Start the stub server.
+// Start starts the stub server.
 func (s *StubServer) Start() error {
 	// Setup HTTP server
 	e := echo.New()
@@ -38,7 +39,7 @@ func (s *StubServer) Start() error {
 	e.Use(middleware.Recover())
 	e.Pre(middleware.RemoveTrailingSlash())
 	// Load stub files and build routes
-	routes, err := BuildRoutes(s.Root)
+	routes, err := BuildRoutes(s.Config.Root)
 	if err != nil {
 		return err
 	}
@@ -50,8 +51,8 @@ func (s *StubServer) Start() error {
 	e.GET("/_liege/routes", s.routesHandler)
 	e.Any("/*", s.stubsHandler)
 	// Start
-	console.Logger.Printf("\nHTTP server started on port %d\n\n", s.Port)
-	e.Logger.Fatal(e.Start(":" + fmt.Sprint(s.Port)))
+	console.Logger.Printf("\nHTTP server started on port %d\n\n", s.Config.Port)
+	e.Logger.Fatal(e.Start(":" + fmt.Sprint(s.Config.Port)))
 	return nil
 }
 
@@ -59,44 +60,46 @@ func (s *StubServer) Start() error {
 // Handlers
 //
 
-// Get the stub server configuration.
+// getConfigHandler gets the stub server configuration.
 func (s *StubServer) getConfigHandler(c echo.Context) error {
-	return c.JSON(http.StatusOK, console.Args{Root: s.Root})
+	return c.JSON(http.StatusOK, s.Config)
 }
 
-// Update the stub server configuration.
+// updateConfigHandler updates the stub server configuration.
 func (s *StubServer) updateConfigHandler(c echo.Context) error {
-	config := new(console.Args)
+	config := new(model.Config)
 	if err := c.Bind(config); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	} else if err := console.ValidateRootDirPath(config.Root); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	} else if !config.Latency.IsValid() {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid latency value")
 	}
-	s.Root = config.Root
+	s.Config.Root = config.Root
+	s.Config.Latency = config.Latency
 	return c.NoContent(http.StatusNoContent)
 }
 
-// Reload stub files and re-build routes.
+// refreshHandler reloads stub files and re-builds routes.
 func (s *StubServer) refreshHandler(c echo.Context) error {
-	routes, err := BuildRoutes(s.Root)
-	if err != nil {
+	if routes, err := BuildRoutes(s.Config.Root); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			"unable to load stub files and build routes: "+err.Error())
+	} else {
+		s.routes = routes
 	}
-	s.routes = routes
 	return c.NoContent(http.StatusNoContent)
 }
 
-// Return current registered routes.
+// routesHandler returns current registered routes.
 func (s *StubServer) routesHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, s.routes)
 }
 
-// Handle stub requests using the registered routes.
+// stubsHandler handles stub requests using the registered routes.
 func (s *StubServer) stubsHandler(c echo.Context) error {
-	url := c.Request().URL.Path
 	for _, route := range s.routes {
-		if route.Path != url {
+		if !route.Match(c) {
 			continue
 		}
 		var reqBody []byte
@@ -106,6 +109,10 @@ func (s *StubServer) stubsHandler(c echo.Context) error {
 			if len(reqBody) > 0 && len(reqBody) <= maxRequestBodySize {   // Set as a response header
 				c.Response().Header().Set(requestBodyHeader, base64.StdEncoding.EncodeToString(reqBody))
 			}
+		}
+		latency := route.Latency.Compute(s.Config.Latency)
+		if latency > 0 {
+			time.Sleep(latency)
 		}
 		if len(route.Content) == 0 {
 			return c.NoContent(route.Code)

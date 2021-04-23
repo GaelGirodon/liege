@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"flag"
+	"gaelgirodon.fr/liege/internal/model"
 	"log"
 	"math"
 	"os"
@@ -10,39 +11,44 @@ import (
 )
 
 const (
-	// Application name.
+	// AppName is the application name.
 	AppName = "liege"
-	// Name of the environment variable to set the root server directory.
+	// Version is the application version number.
+	Version = "0.3.0"
+	// RootEnvVar is the name of the environment variable to set the root server directory.
 	RootEnvVar = "LIEGE_ROOT"
-	// Name of the environment variable to set the server port.
+	// PortEnvVar is the name of the environment variable to set the server port.
 	PortEnvVar = "LIEGE_PORT"
-	// Default HTTP server port number.
+	// LatencyEnvVar is the name of the environment variable to set the global latency.
+	LatencyEnvVar = "LIEGE_LATENCY"
+	// DefaultPort is the default HTTP server port number.
 	DefaultPort = 3000
 )
 
-// Application global logger.
+// Logger is the application global logger.
 var Logger = log.New(os.Stdout, "", 0)
 
-// Command-line arguments.
-type Args struct {
-	// Root server directory.
-	Root string `json:"root"`
-	// Server port.
-	Port uint16 `json:"-"`
-}
-
-// Parse, validate and return command-line arguments.
-func ParseArgs() (*Args, error) {
+// ParseArgs parses and validates command-line args and environment vars.
+func ParseArgs() (*model.Config, error) {
+	// Print version number
+	if len(os.Args) == 2 && os.Args[1] == "-v" {
+		println("liege version " + Version)
+		os.Exit(0)
+	}
 	// Parse args
 	portFlag := flag.Uint("p", DefaultPort, "`port` to listen on")
+	latencyFlag := flag.String("l", "0", "simulated response `latency` in ms")
 	flag.Usage = func() {
 		println("Usage:\n  " + AppName + " [flags] <root-dir>\n\nFlags:")
 		flag.PrintDefaults()
 	}
 	args := strings.Join(os.Args, " ")
-	// Default to environment variable values
+	// Default to environment variables
 	if !strings.Contains(args, "-p") && len(os.Getenv(PortEnvVar)) > 0 {
 		os.Args = append(os.Args, "-p="+os.Getenv(PortEnvVar))
+	}
+	if !strings.Contains(args, "-l") && len(os.Getenv(LatencyEnvVar)) > 0 {
+		os.Args = append(os.Args, "-l="+os.Getenv(LatencyEnvVar))
 	}
 	flag.Parse()
 	// Validate port
@@ -57,10 +63,15 @@ func ParseArgs() (*Args, error) {
 	if err := ValidateRootDirPath(root); err != nil {
 		return nil, err
 	}
-	return &Args{root, uint16(*portFlag)}, nil
+	// Validate and parse latency
+	latency, err := model.ParseLatency(*latencyFlag, "")
+	if err != nil {
+		return nil, errors.New("invalid latency value")
+	}
+	return &model.Config{Root: root, Port: uint16(*portFlag), Latency: latency}, nil
 }
 
-// Check that the given server root path points to a valid directory.
+// ValidateRootDirPath checks that the given server root path points to a valid directory.
 func ValidateRootDirPath(root string) error {
 	if len(root) == 0 {
 		return errors.New("path to the server root directory is required")

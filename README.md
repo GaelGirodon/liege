@@ -14,8 +14,8 @@ to easily setup a stub server without requiring too much configuration:
 
 - Handle all HTTP methods
   (static file servers usually handle `GET`/`HEAD` methods only)
-- Allow customizing the response using the file name
-  (no configuration file required)
+- Allow customizing request routing and response using the file name without
+  requiring a configuration file
 - Send the request body back in an HTTP header
 - Handle index files
 
@@ -27,11 +27,13 @@ liege [flags] <root-dir>
 
 ### Arguments
 
-| Argument     | Description                        | Environment variable |
-| ------------ | ---------------------------------- | -------------------- |
-| `<root-dir>` | Path to the server root directory  | `LIEGE_ROOT`         |
-| `-p <port>`  | Port to listen on (default `3000`) | `LIEGE_PORT`         |
-| `-h`         | Show the help message and exit     |
+| Argument       | Description                        | Environment variable | Configuration |
+| -------------- | ---------------------------------- | -------------------- | ------------- |
+| `<root-dir>`   | Path to the server root directory  | `LIEGE_ROOT`         | `root`        |
+| `-p <port>`    | Port to listen on (default `3000`) | `LIEGE_PORT`         |
+| `-l <latency>` | Simulated response latency in ms   | `LIEGE_LATENCY`      | `latency`     |
+| `-v`           | Print the version number and exit  |
+| `-h`           | Print the help message and exit    |
 
 ### Example
 
@@ -51,22 +53,24 @@ Given the following file tree:
 
 ```text
 data/ -> server root directory
- |-- products/
+ |-- items/
  |    |-- index.json
- |    |-- 1.json
+ |    |-- index__qs.json
+ |    |-- 1__GET.json
  |-- admin/
- |    |-- index__403 (empty file)
+ |    |-- index__403_l50 (empty file)
 ```
 
 The server will handle the following routes:
 
-| Method | Path                                                       | Response | Served file           |
-| ------ | ---------------------------------------------------------- | -------- | --------------------- |
-| `*`    | `/products`<br>`/products/index`<br>`/products/index.json` | `200`    | `products/index.json` |
-| `*`    | `/products/1`<br>`/products/1.json`                        | `200`    | `products/1.json`     |
-| `*`    | `/admin`<br>`/admin/index`                                 | `403`    |                       |
+| Method | Paths                                             | Query   | Response | Served file            | Latency |
+| ------ | ------------------------------------------------- | ------- | -------- | ---------------------- | ------- |
+| `*`    | `/items`<br>`/items/index`<br>`/items/index.json` |         | `200`    | `items/index.json`     | ~ 0 ms  |
+| `*`    | `/items`<br>`/items/index`<br>`/items/index.json` | `s[=*]` | `200`    | `items/index__qs.json` | ~ 0 ms  |
+| `GET`  | `/items/1`<br>`/items/1.json`                     |         | `200`    | `items/1__GET.json`    | ~ 0 ms  |
+| `*`    | `/admin`<br>`/admin/index`                        |         | `403`    |                        | ~ 50 ms |
 
-And send the following response:
+And send the following response with an optional additional latency:
 
 - **Status code**: `200` (default) or a custom code
 - **Headers**:
@@ -75,20 +79,41 @@ And send the following response:
   - `X-Request-Body`: base64 encoded request body (only if body size <= 4 KB)
 - **Body**: stub file contents
 
-The response can be customized using the following file name syntax:
+Routing and response can be customized using the following file name syntax:
 
 ```text
-<name>[__<code>][.<ext>]
+<path>[__<options>][.<ext>]
 ```
 
-| Param  | Description                                      |
-| ------ | ------------------------------------------------ |
-| `name` | File name, used in the URL path                  |
-| `code` | Custom HTTP response status code (default `200`) |
-| `ext`  | File extension, helps to determine content type  |
+| Param     | Description                                     |
+| --------- | ----------------------------------------------- |
+| `path`    | File name, used in the URL path                 |
+| `options` | Additional routing and response configuration   |
+| `ext`     | File extension, helps to determine content type |
 
-On start-up, the server loads stub files in memory and build routes.
-To reload stub files from the root directory and update routes, call the
+`__<options>` can be used to further customize request routing and response by
+appending a list of options, prefixed by `__` and separated by `_`, at the end
+of the file name:
+
+| Syntax           | Description                      | Default | Examples        |
+| ---------------- | -------------------------------- | ------- | --------------- |
+| `<method>`       | HTTP method                      | `*`     | `GET`           |
+| `q<key>[=<val>]` | Required query parameter(s)      |         | `qerror=1`      |
+| `<code>`         | Custom HTTP response status code | `200`   | `401`           |
+| `l<x>[-<y>]`     | Simulated response latency in ms | `0`     | `l40`, `l50-90` |
+
+For example, the content of a file named `page__GET_qsearch_403_l250` will be
+sent with a `403` status code and at least 250 ms latency only for `GET`
+requests on `/page` URL with a `search` query parameter.
+
+The latency can be constant (`<x>`) or random between a range (`<x>-<y>`) and
+can be defined globally (using the CLI or the environment variable) and at the
+route level using the file name. The same syntax (`<x>[-<y>]`) is used in both
+cases. Latency defined at the file level overrides globally defined latency
+unless the latter is set to `-1` which totally disables latency.
+
+On start-up, the server loads stub files in memory and build routes. To reload
+stub files from the root directory and update routes, call the
 `refresh` endpoint.
 
 ### Management endpoints
