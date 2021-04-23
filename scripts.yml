@@ -10,20 +10,14 @@ variables:
   GOARCH: amd64
 
 build:
+  params:
+    - GOOS
   script:
-    - if (!$env:GOOS) { Write-Error "Set `$env:GOOS to 'windows' or 'linux'"; exit 1 }
     - $ext = ""; if ($env:GOOS -eq "windows") { $ext = ".exe" }
     - go build -ldflags="-s -w" -o "$env:BIN_FILE$ext" $env:MAIN_FILE
 
 test:
   script: go test ./...
-
-package:
-  script:
-    - $env:GOOS="windows"; fab build
-    - New-Package -Path "$env:BIN_FILE.exe" -Destination $env:DIST_PATH -Name "$($env:APP_NAME)_$($env:GOOS)_$($env:GOARCH)"
-    - $env:GOOS="linux"; fab build
-    - New-Package -Path $env:BIN_FILE -Destination $env:DIST_PATH -Name "$($env:APP_NAME)_$($env:GOOS)_$($env:GOARCH)"
 
 release:
   params:
@@ -34,7 +28,6 @@ release:
     - git add ./CHANGELOG.md
     - git commit -m "Release $env:VERSION"
     - git tag -a "$env:VERSION" -m "$env:VERSION"
-    - fab clean package
 
 docker:build:
   params:

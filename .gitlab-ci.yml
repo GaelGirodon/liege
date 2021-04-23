@@ -1,0 +1,51 @@
+#
+# .gitlab-ci.yml
+#
+
+stages:
+  - test
+  - build
+  - package
+
+workflow:
+  rules: [ if: $CI_COMMIT_BRANCH ]
+
+test:
+  stage: test
+  image: golang:1.16
+  script:
+    - go test ./...
+
+build:
+  stage: build
+  image: golang:1.16
+  script:
+    - GOARCH=amd64 GOOS=linux   go build -ldflags="-s -w" -o "liege"     "cmd/liege.go"
+    - GOARCH=amd64 GOOS=windows go build -ldflags="-s -w" -o "liege.exe" "cmd/liege.go"
+  artifacts:
+    paths: [ "liege", "liege.exe" ]
+    expire_in: 1 week
+
+package:linux:
+  stage: package
+  image: buildpack-deps
+  script:
+    - archive=liege_linux_amd64.tar.gz
+    - tar zcvf "${archive}" liege
+    - sha256sum "${archive}" | cut -d' ' -f 1 > "${archive}.sha256"
+  artifacts:
+    paths: [ "liege_linux_amd64.tar.gz*" ]
+    expire_in: 1 week
+
+package:windows:
+  stage: package
+  image: mcr.microsoft.com/powershell
+  script:
+    - pwsh -NoLogo -NoProfile -Command "
+      \$archive = 'liege_windows_amd64.zip';
+      Compress-Archive 'liege.exe' -DestinationPath \"\$archive\" -CompressionLevel 'Optimal';
+      \$hash = (Get-FileHash -Algorithm 'SHA256' \"\$archive\").Hash.ToLower();
+      Set-Content -Path \"\$archive.sha256\" -Value \"\$hash\`n\" -Encoding 'ascii' -NoNewline"
+  artifacts:
+    paths: [ "liege_windows_amd64.zip*" ]
+    expire_in: 1 week

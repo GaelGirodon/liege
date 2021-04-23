@@ -1,8 +1,8 @@
 # _Liège_
 
-[![build](https://img.shields.io/github/workflow/status/GaelGirodon/liege/CI?style=flat-square)](https://github.com/GaelGirodon/liege/actions)
 [![release](https://img.shields.io/github/v/release/GaelGirodon/liege?style=flat-square)](https://github.com/GaelGirodon/liege/releases)
 [![license](https://img.shields.io/github/license/GaelGirodon/liege?color=informational&style=flat-square)](https://github.com/GaelGirodon/liege/blob/master/LICENSE)
+[![build](https://img.shields.io/gitlab/pipeline/GaelGirodon/liege/master?style=flat-square)](https://gitlab.com/GaelGirodon/liege/-/pipelines/latest)
 [![docker image size](https://img.shields.io/docker/image-size/gaelgirodon/liege?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/gaelgirodon/liege)
 
 HTTP stub server from plain files.
