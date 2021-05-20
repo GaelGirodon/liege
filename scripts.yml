@@ -33,7 +33,7 @@ docker:build:
   params:
     - VERSION
   script:
-    - docker build -t gaelgirodon/liege .
+    - docker build --pull -t gaelgirodon/liege .
     - docker tag gaelgirodon/liege gaelgirodon/liege:$env:VERSION
 
 docker:push:

@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"gaelgirodon.fr/liege/internal/console"
 	"gaelgirodon.fr/liege/internal/model"
 	"github.com/labstack/echo/v4"
@@ -51,8 +50,14 @@ func (s *StubServer) Start() error {
 	e.GET("/_liege/routes", s.routesHandler)
 	e.Any("/*", s.stubsHandler)
 	// Start
-	console.Logger.Printf("\nHTTP server started on port %d\n\n", s.Config.Port)
-	e.Logger.Fatal(e.Start(":" + fmt.Sprint(s.Config.Port)))
+	if s.Config.HasTLS() {
+		console.Logger.Printf("\nHTTPS server started on port %d\n\n", s.Config.Port)
+		err = e.StartTLS(s.Config.Address(), s.Config.Cert, s.Config.Key)
+	} else {
+		console.Logger.Printf("\nHTTP server started on port %d\n\n", s.Config.Port)
+		err = e.Start(s.Config.Address())
+	}
+	e.Logger.Fatal(err)
 	return nil
 }
 

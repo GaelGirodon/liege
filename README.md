@@ -27,13 +27,15 @@ liege [flags] <root-dir>
 
 ### Arguments
 
-| Argument       | Description                        | Environment variable | Configuration |
-| -------------- | ---------------------------------- | -------------------- | ------------- |
-| `<root-dir>`   | Path to the server root directory  | `LIEGE_ROOT`         | `root`        |
-| `-p <port>`    | Port to listen on (default `3000`) | `LIEGE_PORT`         |
-| `-l <latency>` | Simulated response latency in ms   | `LIEGE_LATENCY`      | `latency`     |
-| `-v`           | Print the version number and exit  |
-| `-h`           | Print the help message and exit    |
+| Argument     | Description                          | Environment variable | Configuration |
+| ------------ | ------------------------------------ | -------------------- | ------------- |
+| `<root-dir>` | Path to the server root directory    | `LIEGE_ROOT`         | `root`        |
+| `-p <port>`  | Port to listen on (default `3000`)   | `LIEGE_PORT`         |
+| `-c <cert>`  | Path to the TLS certificate PEM file | `LIEGE_CERT`         |
+| `-k <key>`   | Path to the TLS private key PEM file | `LIEGE_KEY`          |
+| `-l <lat>`   | Simulated response latency in ms     | `LIEGE_LATENCY`      | `latency`     |
+| `-v`         | Print the version number and exit    |
+| `-h`         | Print the help message and exit      |
 
 ### Example
 
@@ -126,6 +128,15 @@ The server provides the following management endpoints:
 | `PUT`  | `/_liege/config`  | `204`    | Update configuration |
 | `POST` | `/_liege/refresh` | `204`    | Reload stub files    |
 | `GET`  | `/_liege/routes`  | `200`    | Get available routes |
+
+### TLS setup
+
+Generate a self-signed X.509 TLS certificate or obtain a certificate from a CA,
+and start the server with `-c` and `-k` flags:
+
+```shell
+$ liege -c cert.pem -k key.pem ./data/
+```
 
 ## License
 
