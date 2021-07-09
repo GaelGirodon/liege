@@ -24,8 +24,8 @@ release:
     - VERSION
   step_by_step: true
   script:
-    - echo "Update the changelog..."
-    - git add ./CHANGELOG.md
+    - echo "Update version number and changelog..."
+    - git add .
     - git commit -m "Release $env:VERSION"
     - git tag -a "$env:VERSION" -m "$env:VERSION"
 
