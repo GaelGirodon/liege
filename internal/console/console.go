@@ -36,7 +36,7 @@ var Logger = log.New(os.Stdout, "", 0)
 func ParseArgs() (*model.Config, error) {
 	// Print version number
 	if len(os.Args) == 2 && os.Args[1] == "-v" {
-		println("liege version " + Version)
+		println(AppName + " version " + Version)
 		os.Exit(0)
 	}
 	// Parse args

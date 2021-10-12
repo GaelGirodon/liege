@@ -4,6 +4,7 @@ shell: powershell
 variables:
   APP_NAME: liege
   MAIN_FILE: ./cmd/liege.go
+  VERSION_FILE: ./internal/console/console.go
   BIN_PATH: ./bin
   BIN_FILE: ./bin/liege
   DIST_PATH: ./dist
@@ -20,27 +21,26 @@ test:
   script: go test ./...
 
 release:
-  params:
-    - VERSION
   step_by_step: true
   script:
-    - echo "Update version number and changelog..."
-    - git add .
-    - git commit -m "Release $env:VERSION"
-    - git tag -a "$env:VERSION" -m "$env:VERSION"
+    - $v = (Get-Version $env:VERSION_FILE).Split(".")
+    - $v[1] = "$([int]$v[1] + 1)"; $version = "$($v -join ".")"
+    - Set-Version -Path $env:VERSION_FILE -Version "$version"
+    - echo "Update changelog..."
+    - git add CHANGELOG.md $env:VERSION_FILE
+    - git commit -m "Release $version"
+    - git tag -a "$version" -m "$version"
 
 docker:build:
-  params:
-    - VERSION
   script:
+    - &version $version = (Get-Version $env:VERSION_FILE)
     - docker build --pull -t gaelgirodon/liege .
-    - docker tag gaelgirodon/liege gaelgirodon/liege:$env:VERSION
+    - docker tag gaelgirodon/liege gaelgirodon/liege:$version
 
 docker:push:
-  params:
-    - VERSION
   script:
-    - docker push gaelgirodon/liege:$env:VERSION
+    - *version
+    - docker push gaelgirodon/liege:$version
     - docker push gaelgirodon/liege:latest
 
 clean:
