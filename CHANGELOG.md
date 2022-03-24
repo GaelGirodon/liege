@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.0 - 2022-03-25
+
+- Update dependencies
+
 ## 0.4.0 - 2021-07-09
 
 - Add support for TLS

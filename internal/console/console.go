@@ -14,7 +14,7 @@ const (
 	// AppName is the application name.
 	AppName = "liege"
 	// Version is the application version number.
-	Version = "0.4.0"
+	Version = "0.5.0"
 	// RootEnvVar is the name of the environment variable to set the root server directory.
 	RootEnvVar = "LIEGE_ROOT"
 	// PortEnvVar is the name of the environment variable to set the server port.
