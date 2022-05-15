@@ -14,10 +14,10 @@ func main() {
 	}
 
 	// Print start-up banner
-	console.Logger.Println("_________ __   _________________\n" +
+	console.Logger.Printf("_________ __   _________________\n" +
 		"________ / /  /  _/ __/ ___/ __/\n" +
 		"_______ / /___/ // _// (_ / _/\n" +
-		"______ /____/___/___/\\___/___/")
+		"______ /____/___/___/\\___/___/\n\n")
 
 	// Setup and start the HTTP server
 	s := &server.StubServer{Config: *cfg}

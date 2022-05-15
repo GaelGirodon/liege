@@ -14,7 +14,9 @@ test:
   stage: test
   image: golang:1.18
   script:
-    - go test ./...
+    - go test -v -coverpkg ./... -coverprofile coverage.out ./...
+    - go tool cover -func=coverage.out
+  coverage: '/total:[^0-9]+[0-9.]+%/'
 
 build:
   stage: build

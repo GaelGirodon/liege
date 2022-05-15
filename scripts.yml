@@ -18,7 +18,7 @@ build:
     - go build -ldflags="-s -w" -o "$env:BIN_FILE$ext" $env:MAIN_FILE
 
 test:
-  script: go test ./...
+  script: go test ./... -v
 
 release:
   step_by_step: true

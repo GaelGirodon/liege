@@ -51,14 +51,13 @@ func (s *StubServer) Start() error {
 	e.Any("/*", s.stubsHandler)
 	// Start
 	if s.Config.HasTLS() {
-		console.Logger.Printf("\nHTTPS server started on port %d\n\n", s.Config.Port)
+		console.Logger.Printf("HTTPS server started on port %d\n\n", s.Config.Port)
 		err = e.StartTLS(s.Config.Address(), s.Config.Cert, s.Config.Key)
 	} else {
-		console.Logger.Printf("\nHTTP server started on port %d\n\n", s.Config.Port)
+		console.Logger.Printf("HTTP server started on port %d\n\n", s.Config.Port)
 		err = e.Start(s.Config.Address())
 	}
-	e.Logger.Fatal(err)
-	return nil
+	return err
 }
 
 //
