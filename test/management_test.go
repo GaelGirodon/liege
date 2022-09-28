@@ -18,16 +18,27 @@ func testManagementEndpoints(t *testing.T) {
 		checkConfigEndpoint(t, model.Config{Root: root, Latency: model.Latency{Min: 0, Max: 0}})
 	})
 
-	// PUT /_liege/config => try to update the configuration with an invalid latency
-	t.Run("e2e/mngmt/config/put/400", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:%d/_liege/config", port),
-			strings.NewReader(fmt.Sprintf(`{"root":"%s","latency":{"min":3,"max":2}}`, root)))
-		req.Header.Set("Content-Type", "application/json")
-		res, _ := http.DefaultClient.Do(req)
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("want status = %d, got %d", http.StatusBadRequest, res.StatusCode)
-		}
-	})
+	// PUT /_liege/config => try to update the configuration with an invalid request
+	putConfigBadRequestTests := []struct {
+		name string
+		body string
+	}{
+		{"bind", "???"},
+		{"root", `{"root":"notfound","latency":{"min":1,"max":2}}`},
+		{"latency", `{"root":"` + root + `","latency":{"min":3,"max":2}}`},
+	}
+	for _, test := range putConfigBadRequestTests {
+		t.Run("e2e/mngmt/config/put/400/"+test.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodPut,
+				fmt.Sprintf("http://localhost:%d/_liege/config", port),
+				strings.NewReader(test.body))
+			req.Header.Set("Content-Type", "application/json")
+			res, _ := http.DefaultClient.Do(req)
+			if res.StatusCode != http.StatusBadRequest {
+				t.Errorf("want status = %d, got %d", http.StatusBadRequest, res.StatusCode)
+			}
+		})
+	}
 
 	// PUT /_liege/config => update and check configuration
 	t.Run("e2e/mngmt/config/put/204", func(t *testing.T) {
@@ -43,7 +54,7 @@ func testManagementEndpoints(t *testing.T) {
 
 	// GET /_liege/routes => get and check routes
 	t.Run("e2e/mngmt/routes/get", func(t *testing.T) {
-		checkRoutesEndpoint(t, 10)
+		checkRoutesEndpoint(t, 12)
 	})
 
 	// POST /_liege/refresh => modify & reload stub files and check routes
@@ -53,7 +64,7 @@ func testManagementEndpoints(t *testing.T) {
 		if res.StatusCode != http.StatusNoContent {
 			t.Errorf("want status = %d, got %v", http.StatusNoContent, res.StatusCode)
 		}
-		checkRoutesEndpoint(t, 11)
+		checkRoutesEndpoint(t, 13)
 		_ = os.Remove("data/test")
 	})
 }

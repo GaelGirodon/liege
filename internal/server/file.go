@@ -4,8 +4,8 @@ import (
 	"errors"
 	"gaelgirodon.fr/liege/internal/model"
 	"github.com/labstack/echo/v4"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -61,7 +61,7 @@ func parseFileName(filename string) (name, ext string, route model.Route, err er
 
 // readFile reads a file and returns the contents and the content type (MIME type).
 func readFile(path string) ([]byte, string, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, "", errors.New("unable to read file")
 	}

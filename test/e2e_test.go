@@ -1,9 +1,13 @@
 package test
 
 import (
+	"errors"
+	"fmt"
 	"gaelgirodon.fr/liege/internal/model"
 	"gaelgirodon.fr/liege/internal/server"
+	"net"
 	"testing"
+	"time"
 )
 
 const (
@@ -21,6 +25,12 @@ func Test_e2e(t *testing.T) {
 	go func() {
 		_ = s.Start()
 	}()
+	// Wait for the server to be up
+	err := errors.New("wait")
+	for i := 0; err != nil && i < 10; i++ {
+		time.Sleep(time.Second)
+		_, err = net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), time.Second)
+	}
 
 	// Test stub routes
 	testStub(t)

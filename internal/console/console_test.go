@@ -49,6 +49,8 @@ func Test_Parse(t *testing.T) {
 			os.Args = test.args
 			_ = os.Setenv(RootEnvVar, test.env.root)
 			_ = os.Setenv(PortEnvVar, test.env.port)
+			_ = os.Setenv(CertEnvVar, test.env.cert)
+			_ = os.Setenv(KeyEnvVar, test.env.key)
 			_ = os.Setenv(LatencyEnvVar, test.env.latency)
 			// Reset flags configuration
 			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -66,6 +68,12 @@ func Test_Parse(t *testing.T) {
 			}
 			if args.Port != test.want.Port {
 				t.Errorf("want port = %v, got %v", test.want.Port, args.Port)
+			}
+			if args.Cert != test.want.Cert {
+				t.Errorf("want cert = %v, got %v", test.want.Cert, args.Cert)
+			}
+			if args.Key != test.want.Key {
+				t.Errorf("want key = %v, got %v", test.want.Key, args.Key)
 			}
 			if args.Latency != test.want.Latency {
 				t.Errorf("want latency = %v, got %v", test.want.Latency, args.Latency)

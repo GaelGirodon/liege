@@ -7,7 +7,7 @@ import (
 	"gaelgirodon.fr/liege/internal/model"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -108,9 +108,9 @@ func (s *StubServer) stubsHandler(c echo.Context) error {
 		}
 		var reqBody []byte
 		if c.Request().Body != nil && c.Request().ContentLength > 0 {
-			reqBody, _ = ioutil.ReadAll(c.Request().Body)                 // Read request body
-			c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // Reset request body
-			if len(reqBody) > 0 && len(reqBody) <= maxRequestBodySize {   // Set as a response header
+			reqBody, _ = io.ReadAll(c.Request().Body)                   // Read request body
+			c.Request().Body = io.NopCloser(bytes.NewBuffer(reqBody))   // Reset request body
+			if len(reqBody) > 0 && len(reqBody) <= maxRequestBodySize { // Set as a response header
 				c.Response().Header().Set(requestBodyHeader, base64.StdEncoding.EncodeToString(reqBody))
 			}
 		}
