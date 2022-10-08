@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.0 - 2022-10-09
+
+- Add tests and migrate CI
+- Update dependencies
+
 ## 0.5.0 - 2022-03-25
 
 - Update dependencies
