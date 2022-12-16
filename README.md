@@ -2,7 +2,7 @@
 
 [![release](https://img.shields.io/github/v/release/GaelGirodon/liege?style=flat-square)](https://github.com/GaelGirodon/liege/releases/latest)
 [![license](https://img.shields.io/github/license/GaelGirodon/liege?color=blue&style=flat-square)](./LICENSE)
-[![build](https://img.shields.io/github/workflow/status/GaelGirodon/liege/build?style=flat-square)](https://github.com/GaelGirodon/liege/actions/workflows/build.yml)
+[![build](https://img.shields.io/github/actions/workflow/status/GaelGirodon/liege/build.yml?branch=main&style=flat-square)](https://github.com/GaelGirodon/liege/actions/workflows/build.yml)
 [![tests](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fgist.githubusercontent.com%2FGaelGirodon%2Ffbde4d59b7dd3c4f2cc9c4fea3497ae1%2Fraw%2Fliege-go-tests.json)](https://github.com/GaelGirodon/liege/actions/workflows/build.yml)
 [![coverage](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fgist.githubusercontent.com%2FGaelGirodon%2Ffbde4d59b7dd3c4f2cc9c4fea3497ae1%2Fraw%2Fliege-go-coverage.json)](https://github.com/GaelGirodon/liege/actions/workflows/build.yml)
 [![docker](https://img.shields.io/docker/image-size/gaelgirodon/liege?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/gaelgirodon/liege)
