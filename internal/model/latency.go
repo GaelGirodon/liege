@@ -26,12 +26,12 @@ func ParseLatency(value string, prefix string) (latency Latency, err error) {
 		return Latency{}, errors.New("invalid latency value")
 	}
 	if match := latencyPattern.FindStringSubmatch(value[len(prefix):]); len(match) == 3 {
-		min, _ := strconv.Atoi(match[1])
-		max := min
+		minLat, _ := strconv.Atoi(match[1])
+		maxLat := minLat
 		if len(match[2]) > 0 {
-			max, _ = strconv.Atoi(match[2])
+			maxLat, _ = strconv.Atoi(match[2])
 		}
-		latency = Latency{Min: min, Max: max}
+		latency = Latency{Min: minLat, Max: maxLat}
 		if latency.IsValid() {
 			return
 		}
