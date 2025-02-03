@@ -1,4 +1,4 @@
-FROM golang:1.22 AS build
+FROM golang:1.23 AS build
 COPY . /app
 WORKDIR /app
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
