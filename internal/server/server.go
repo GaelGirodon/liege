@@ -3,13 +3,16 @@ package server
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
+	"io"
+	"log/slog"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"gaelgirodon.fr/liege/internal/console"
 	"gaelgirodon.fr/liege/internal/model"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"io"
-	"net/http"
-	"time"
 )
 
 const (
@@ -30,13 +33,6 @@ type StubServer struct {
 
 // Start starts the stub server.
 func (s *StubServer) Start() error {
-	// Setup HTTP server
-	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Pre(middleware.RemoveTrailingSlash())
 	// Load stub files and build routes
 	routes, err := BuildRoutes(s.Config.Root)
 	if err != nil {
@@ -44,20 +40,45 @@ func (s *StubServer) Start() error {
 	}
 	s.routes = routes
 	// Register first-level routes
-	e.GET("/_liege/config", s.getConfigHandler)
-	e.PUT("/_liege/config", s.updateConfigHandler)
-	e.POST("/_liege/refresh", s.refreshHandler)
-	e.GET("/_liege/routes", s.routesHandler)
-	e.Any("/*", s.stubsHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /_liege/config", s.getConfigHandler)
+	mux.HandleFunc("PUT /_liege/config", s.updateConfigHandler)
+	mux.HandleFunc("POST /_liege/refresh", s.refreshHandler)
+	mux.HandleFunc("GET /_liege/routes", s.routesHandler)
+	mux.HandleFunc("/", s.stubsHandler)
 	// Start
+	h := &http.Server{
+		Addr:    s.Config.Address(),
+		Handler: s.middleware(mux),
+	}
 	if s.Config.HasTLS() {
-		console.Logger.Printf("HTTPS server started on port %d\n\n", s.Config.Port)
-		err = e.StartTLS(s.Config.Address(), s.Config.Cert, s.Config.Key)
+		slog.Info("HTTPS server started on port " + strconv.Itoa(int(s.Config.Port)))
+		err = h.ListenAndServeTLS(s.Config.Cert, s.Config.Key)
 	} else {
-		console.Logger.Printf("HTTP server started on port %d\n\n", s.Config.Port)
-		err = e.Start(s.Config.Address())
+		slog.Info("HTTP server started on port " + strconv.Itoa(int(s.Config.Port)))
+		err = h.ListenAndServe()
 	}
 	return err
+}
+
+//
+// Middleware
+//
+
+// middleware handles common features on all handlers.
+func (s *StubServer) middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Log request
+		slog.Info("REQUEST", "method", req.Method, "uri", req.RequestURI,
+			"host", req.Host, "user_agent", req.UserAgent(), "remote_addr", req.RemoteAddr)
+		// Remove trailing slash
+		if len(req.URL.Path) > 1 && strings.HasSuffix(req.URL.Path, "/") {
+			req.URL.Path = strings.TrimSuffix(req.URL.Path, "/")
+			req.RequestURI = req.URL.RequestURI()
+		}
+		// Next
+		next.ServeHTTP(w, req)
+	})
 }
 
 //
@@ -65,53 +86,64 @@ func (s *StubServer) Start() error {
 //
 
 // getConfigHandler gets the stub server configuration.
-func (s *StubServer) getConfigHandler(c echo.Context) error {
-	return c.JSON(http.StatusOK, s.Config)
+func (s *StubServer) getConfigHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(s.Config); err != nil {
+		slog.Error("unable to write config data to the response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // updateConfigHandler updates the stub server configuration.
-func (s *StubServer) updateConfigHandler(c echo.Context) error {
+func (s *StubServer) updateConfigHandler(w http.ResponseWriter, req *http.Request) {
 	config := new(model.Config)
-	if err := c.Bind(config); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	if err := json.NewDecoder(req.Body).Decode(config); err != nil {
+		http.Error(w, "invalid body", http.StatusBadRequest)
 	} else if err := console.ValidateRootDirPath(config.Root); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else if !config.Latency.IsValid() {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid latency value")
+		http.Error(w, "invalid latency value", http.StatusBadRequest)
+	} else {
+		s.Config.Root = config.Root
+		s.Config.Latency = config.Latency
+		w.WriteHeader(http.StatusNoContent)
 	}
-	s.Config.Root = config.Root
-	s.Config.Latency = config.Latency
-	return c.NoContent(http.StatusNoContent)
 }
 
 // refreshHandler reloads stub files and re-builds routes.
-func (s *StubServer) refreshHandler(c echo.Context) error {
+func (s *StubServer) refreshHandler(w http.ResponseWriter, _ *http.Request) {
 	if routes, err := BuildRoutes(s.Config.Root); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest,
-			"unable to load stub files and build routes: "+err.Error())
+		http.Error(w, "unable to load stub files and build routes: "+err.Error(),
+			http.StatusBadRequest)
 	} else {
 		s.routes = routes
+		w.WriteHeader(http.StatusNoContent)
 	}
-	return c.NoContent(http.StatusNoContent)
 }
 
 // routesHandler returns current registered routes.
-func (s *StubServer) routesHandler(c echo.Context) error {
-	return c.JSON(http.StatusOK, s.routes)
+func (s *StubServer) routesHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(s.routes); err != nil {
+		slog.Error("unable to write routes data to the response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // stubsHandler handles stub requests using the registered routes.
-func (s *StubServer) stubsHandler(c echo.Context) error {
+func (s *StubServer) stubsHandler(w http.ResponseWriter, req *http.Request) {
 	for _, route := range s.routes {
-		if !route.Match(c) {
+		if !route.Match(req) {
 			continue
 		}
 		var reqBody []byte
-		if c.Request().Body != nil && c.Request().ContentLength > 0 {
-			reqBody, _ = io.ReadAll(c.Request().Body)                   // Read request body
-			c.Request().Body = io.NopCloser(bytes.NewBuffer(reqBody))   // Reset request body
+		if req.Body != nil && req.ContentLength > 0 {
+			reqBody, _ = io.ReadAll(req.Body)                           // Read request body
+			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))           // Reset request body
 			if len(reqBody) > 0 && len(reqBody) <= maxRequestBodySize { // Set as a response header
-				c.Response().Header().Set(requestBodyHeader, base64.StdEncoding.EncodeToString(reqBody))
+				w.Header().Set(requestBodyHeader, base64.StdEncoding.EncodeToString(reqBody))
 			}
 		}
 		latency := route.Latency.Compute(s.Config.Latency)
@@ -119,9 +151,16 @@ func (s *StubServer) stubsHandler(c echo.Context) error {
 			time.Sleep(latency)
 		}
 		if len(route.Content) == 0 {
-			return c.NoContent(route.Code)
+			w.WriteHeader(route.Code)
+		} else {
+			w.Header().Set("Content-Type", route.ContentType)
+			w.WriteHeader(route.Code)
+			if _, err := w.Write(route.Content); err != nil {
+				slog.Error("unable to write stub route content to the response")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 		}
-		return c.Blob(route.Code, route.ContentType, route.Content)
+		return
 	}
-	return c.NoContent(http.StatusNotFound)
+	w.WriteHeader(http.StatusNotFound)
 }

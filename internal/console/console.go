@@ -3,11 +3,11 @@ package console
 import (
 	"errors"
 	"flag"
-	"gaelgirodon.fr/liege/internal/model"
-	"log"
 	"math"
 	"os"
 	"strings"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 const (
@@ -28,9 +28,6 @@ const (
 	// DefaultPort is the default HTTP server port number.
 	DefaultPort = 3000
 )
-
-// Logger is the application global logger.
-var Logger = log.New(os.Stdout, "", 0)
 
 // ParseArgs parses and validates command-line args and environment vars.
 func ParseArgs() (*model.Config, error) {

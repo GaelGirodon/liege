@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
@@ -42,16 +41,16 @@ func (r Route) With(filePath string, path string, content []byte, contentType st
 }
 
 // Match checks the route eligibility against a given HTTP request.
-func (r Route) Match(c echo.Context) bool {
-	path := c.Request().URL.Path
-	if r.Path != path || len(r.Method) > 0 && r.Method != c.Request().Method {
+func (r Route) Match(req *http.Request) bool {
+	path := req.URL.Path
+	if r.Path != path || len(r.Method) > 0 && r.Method != req.Method {
 		return false
 	}
 	for _, qp := range r.QueryParams {
-		if _, exists := c.QueryParams()[qp.Name]; !exists {
+		if value := req.URL.Query().Get(qp.Name); len(value) == 0 {
 			return false
 		}
-		if len(qp.Value) > 0 && c.QueryParam(qp.Name) != qp.Value {
+		if len(qp.Value) > 0 && req.URL.Query().Get(qp.Name) != qp.Value {
 			return false
 		}
 	}

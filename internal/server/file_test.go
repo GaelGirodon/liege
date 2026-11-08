@@ -1,9 +1,10 @@
 package server
 
 import (
-	"gaelgirodon.fr/liege/internal/model"
 	"reflect"
 	"testing"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 func Test_parseFileName(t *testing.T) {

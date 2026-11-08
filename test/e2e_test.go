@@ -3,11 +3,12 @@ package test
 import (
 	"errors"
 	"fmt"
-	"gaelgirodon.fr/liege/internal/model"
-	"gaelgirodon.fr/liege/internal/server"
 	"net"
 	"testing"
 	"time"
+
+	"gaelgirodon.fr/liege/internal/model"
+	"gaelgirodon.fr/liege/internal/server"
 )
 
 const (

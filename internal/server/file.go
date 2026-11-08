@@ -2,14 +2,14 @@ package server
 
 import (
 	"errors"
-	"gaelgirodon.fr/liege/internal/model"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 const (
@@ -72,13 +72,13 @@ func readFile(path string) ([]byte, string, error) {
 	if strings.Contains(contentType, "text/plain") {
 		switch ext := filepath.Ext(path); ext {
 		case ".json":
-			contentType = strings.Replace(contentType, "text/plain", echo.MIMEApplicationJSON, 1)
+			contentType = strings.Replace(contentType, "text/plain", "application/json", 1)
 		case ".xml":
-			contentType = strings.Replace(contentType, "text/plain", echo.MIMETextXML, 1)
+			contentType = strings.Replace(contentType, "text/plain", "text/xml", 1)
 		case ".html":
-			contentType = strings.Replace(contentType, "text/plain", echo.MIMETextHTML, 1)
+			contentType = strings.Replace(contentType, "text/plain", "text/html", 1)
 		case ".js":
-			contentType = strings.Replace(contentType, "text/plain", echo.MIMEApplicationJavaScript, 1)
+			contentType = strings.Replace(contentType, "text/plain", "application/javascript", 1)
 		}
 	}
 	return content, contentType, nil

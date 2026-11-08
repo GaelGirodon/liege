@@ -56,9 +56,3 @@ docker_push() {
 clean() {
     if [[ -d "$BIN_PATH" ]]; then rm -ri "$BIN_PATH"; fi
 }
-
-update() {
-    echo "$(head -n 1 go.mod)" > go.mod
-    rm go.sum
-    go mod tidy
-}

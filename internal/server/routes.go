@@ -1,20 +1,21 @@
 package server
 
 import (
-	"gaelgirodon.fr/liege/internal/console"
-	"gaelgirodon.fr/liege/internal/model"
+	"log/slog"
 	"os"
 	paths "path"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 // BuildRoutes loads stub response files from the given root directory and builds server routes.
 func BuildRoutes(root string) (routes []*model.Route, err error) {
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			console.Logger.Println("Error: unable to access " + path)
+			slog.Error("unable to access "+path, "error", err)
 			return nil
 		}
 		if info.IsDir() {
@@ -24,13 +25,13 @@ func BuildRoutes(root string) (routes []*model.Route, err error) {
 		// Get the relative path to build the URL
 		relPath, err := filepath.Rel(root, path)
 		if err != nil {
-			console.Logger.Println("Error: unable to load " + path)
+			slog.Error("unable to load "+path, "error", err)
 			return nil
 		}
 		// Parse file name
 		name, ext, route, err := parseFileName(info.Name())
 		if err != nil {
-			console.Logger.Println("Error: unable to load " + path + ", " + err.Error())
+			slog.Error("unable to load "+path, "error", err)
 			return nil
 		}
 		// Build base URL
@@ -38,7 +39,7 @@ func BuildRoutes(root string) (routes []*model.Route, err error) {
 		// Load file and guess content type
 		content, contentType, err := readFile(path)
 		if err != nil {
-			console.Logger.Println("Error: " + err.Error())
+			slog.Error("unable to read the file", "error", err)
 			return nil
 		}
 		// 1st route: path without extension

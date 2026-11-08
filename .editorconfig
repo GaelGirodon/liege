@@ -13,5 +13,5 @@ trim_trailing_whitespace = true
 indent_style = tab
 tab_width = 4
 
-[*.md]
+[*.{md,yml}]
 indent_size = 2

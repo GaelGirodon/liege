@@ -3,12 +3,13 @@ package test
 import (
 	"encoding/json"
 	"fmt"
-	"gaelgirodon.fr/liege/internal/model"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 // testManagementEndpoints tests /_liege/* endpoints.

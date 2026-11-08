@@ -2,14 +2,15 @@ package console
 
 import (
 	"flag"
-	"gaelgirodon.fr/liege/internal/model"
 	"os"
 	"strings"
 	"testing"
+
+	"gaelgirodon.fr/liege/internal/model"
 )
 
 func Test_Parse(t *testing.T) {
-	files := []string{"../../go.mod", "../../go.sum"}
+	files := []string{"../../README.md", "../../CHANGELOG.md"}
 	type env struct {
 		root    string
 		port    string
